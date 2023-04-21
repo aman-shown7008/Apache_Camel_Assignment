@@ -1,0 +1,34 @@
+Create a CAMEL program to insert csv data to MySQL Database.
+
+
+import org.apache.camel.builder.RouteBuilder;
+
+public class CsvToMysqlRoute extends RouteBuilder {
+
+    @Override
+    public void configure() throws Exception {
+        from("file:/path/to/csv/file?noop=true")
+            .unmarshal().csv()
+            .split(body())
+            .to("jdbc:mysql://localhost:3306/mydatabase?user=myuser&password=mypassword")
+            .setBody(simple("INSERT INTO mytable (col1, col2, col3) VALUES (?, ?, ?)"))
+            .to("jdbc:mysql://localhost:3306/mydatabase?user=myuser&password=mypassword");
+    }
+}
+
+Explanation-
+
+In this, we have first use the from method to read the CSV file located at /path/to/csv/file. The [noop=true] option tells Camel to 
+leave the file alone after it has been processed, so we don't need to worry about accidentally deleting or moving the file.
+
+Next, we use the unmarshal().csv() method to convert the CSV data into a list of lists of strings.
+Each list represents a row in the CSV file, and each element in the list represents a column.
+
+We then use the split method to split the list of rows into individual rows, so we can process each row separately.
+
+For each row, we use the to method to send the row data to the MySQL database using the JDBC driver. 
+The JDBC URL includes the database name, and the user and password parameters specify the credentials needed to connect to the database.
+
+Finally, we use the setBody method to construct an SQL query to insert the data into the mytable table. 
+The ? placeholders indicate where the actual data should be inserted, and the simple method specifies the actual data to insert.
+We then use the to method again to execute the SQL query on the database.
