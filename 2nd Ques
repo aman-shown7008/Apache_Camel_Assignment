@@ -1,0 +1,49 @@
+import org.apache.camel.builder.RouteBuilder;
+
+public class CrudRouteBuilder extends RouteBuilder {
+
+    @Override
+    public void configure() throws Exception {
+        // Set up the REST endpoint
+        rest("/employees")
+            .get("/{id}").to("direct:getEmployee")
+            .put("/{id}").to("direct:updateEmployee")
+            .post("/").to("direct:addEmployee")
+            .delete("/{id}").to("direct:deleteEmployee");
+
+        // Define the database configuration
+        String url = "jdbc:mysql://localhost:3306/mydb";
+        String user = "user";
+        String password = "password";
+        String driver = "com.mysql.jdbc.Driver";
+
+        // Define the SQL statements
+        String selectQuery = "SELECT * FROM employees WHERE id = :#id";
+        String updateQuery = "UPDATE employees SET name = :#name, email = :#email WHERE id = :#id";
+        String insertQuery = "INSERT INTO employees (name, email) VALUES (:#name, :#email)";
+        String deleteQuery = "DELETE FROM employees WHERE id = :#id";
+
+        // Set up the SQL component
+        getContext().getComponent("jdbc", JdbcComponent.class)
+            .setDataSource(new DriverManagerDataSource(url, user, password))
+            .setDriverClass(driver);
+
+        // Map the REST endpoints to the SQL statements
+        from("direct:getEmployee")
+            .to("jdbc:" + selectQuery)
+            .marshal().json(JsonLibrary.Jackson);
+
+        from("direct:updateEmployee")
+            .to("jdbc:" + updateQuery);
+
+        from("direct:addEmployee")
+            .to("jdbc:" + insertQuery);
+
+        from("direct:deleteEmployee")
+            .to("jdbc:" + deleteQuery);
+    }
+}
+
+In this code, we define a REST endpoint for the "employees" resource with four endpoints (GET, PUT, POST, DELETE) 
+and map them to the SQL statements for CRUD operations. We use the JDBC component to connect to the MySQL database
+and execute the SQL statements. Finally, we use the JSON data format to serialize and deserialize the employee data.
